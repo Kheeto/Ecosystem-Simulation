@@ -55,7 +55,7 @@ public static class MeshGenerator
 
                 meshData.AddVertex(vertexPosition, percent, vertexIndex);
 
-                if (x < borderedSize -1 && y < borderedSize -1)
+                if (x < borderedSize - 1 && y < borderedSize - 1)
                 {
                     int a = vertexIndicesMap[x, y];
                     int b = vertexIndicesMap[x + meshSimplificationIncrement, y];
@@ -65,11 +65,12 @@ public static class MeshGenerator
                     meshData.AddTriangle(a, d, c);
                     meshData.AddTriangle(d, a, b);
                 }
+
                 vertexIndex++;
             }
         }
 
-        meshData.Finalize();
+        meshData.ProcessMesh();
 
         return meshData;
     }
@@ -133,7 +134,7 @@ public class MeshData
         }
     }
 
-    public void Finalize()
+    public void ProcessMesh()
     {
         if (useFlatShading) FlatShading();
         else BakeNormals();
