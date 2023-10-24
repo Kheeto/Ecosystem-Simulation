@@ -1,31 +1,38 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class Animal : MonoBehaviour {
 
     [Header("Stats")]
-    [SerializeField] private Status status;
-    [SerializeField] private Need currentNeed;
-    [Range(0f, 10f)] [SerializeField] private float hunger = 0f;
-    [Range(0f, 10f)] [SerializeField] private float thirst = 0f;
-    [Range(0f, 10f)] [SerializeField] private float reproduction = 0f;
-
-    [Header("Vision")]
-    [SerializeField] private float spotRange = 15f;
-    [SerializeField] private float eatRange = 2f;
-    [SerializeField] private LayerMask whatIsFood;
+    public Gene speed;
 
     [Header("Needs")]
-    [SerializeField] private float hungerIncrease = .5f;
-    [SerializeField] private float thirstIncrease = .5f;
-    [SerializeField] private float reproductionIncrease = .5f;
+    [SerializeField] protected Need currentNeed;
 
-    [Header("Child")]
-    [SerializeField] private bool isChild;
-    [SerializeField] private Animal parent;
+    [Range(0f, 10f)]
+    [SerializeField] protected float hunger = 0f;
+    [Range(0f, 10f)]
+    [SerializeField] protected float thirst = 0f;
+
+    [Tooltip("How much the Hunger need will increase per second")]
+    [SerializeField] protected float hungerIncrease = .5f;
+    [Tooltip("How much the Thirst need will increase per second")]
+    [SerializeField] protected float thirstIncrease = .5f;
+
+    [Header("Vision")]
+    public Gene spotRange;
+    public Gene eatRange;
+    [SerializeField] protected LayerMask whatIsFood;
+    [SerializeField] protected LayerMask whatIsAnimal;
+
+    [Header("Growth")]
+    public Gene growthTime;
+    public bool isChild;
+    [SerializeField] private float agingTime = 60f;
 
     [Header("References")]
-    [SerializeField] private NavMeshAgent agent;
+    [SerializeField] protected NavMeshAgent agent;
 
     public enum Need
     {
@@ -34,64 +41,57 @@ public class Animal : MonoBehaviour {
         Reproduction
     }
 
-    public enum Status
+    private void Awake()
     {
-        Idle,
-        SearchingWater,
-        Drinking,
-        SearchingFood,
-        Eating,
-        SearchingPartner,
-        Reproducing,
-        FollowingParent
+        UpdateSpeed();
+        Invoke(nameof(Die), agingTime);
     }
 
-    private void Update()
+    protected virtual void Update()
     {
-        float strongestNeed = hunger;
-        currentNeed = Need.Food;
-
-        // Check if other needs are greater than the need for food
-        if (thirst > strongestNeed)
-        {
-            strongestNeed = thirst;
-            currentNeed = Need.Water;
-        }
-        if (reproduction > strongestNeed)
-            currentNeed = Need.Reproduction;
+        HandleNeeds();
 
         switch (currentNeed)
         {
             case Need.Food:
-                HandleFood();
+                HandleHunger();
                 break;
             case Need.Water:
-                HandleWater();
-                break;
-            case Need.Reproduction:
-                HandleReproduction();
+                HandleThirst();
                 break;
         }
-
-        hunger += hungerIncrease * Time.deltaTime;
-        hunger = Mathf.Clamp(hunger, 0f, 10f);
-        thirst += thirstIncrease * Time.deltaTime;
-        thirst = Mathf.Clamp(thirst, 0f, 10f);
-        reproduction += reproductionIncrease * Time.deltaTime;
-        reproduction = Mathf.Clamp(reproduction, 0f, 10f);
-
-        if (hunger == 10f || thirst == 10f) Die();
     }
 
-    private void HandleFood()
+    protected virtual void HandleNeeds()
     {
-        Collider[] food = Physics.OverlapSphere(transform.position, eatRange, whatIsFood);
+        if (thirst > hunger)
+            currentNeed = Need.Water;
+        else
+            currentNeed = Need.Food;
+
+        hunger += hungerIncrease * speed.value * Time.deltaTime;
+        hunger = Mathf.Clamp(hunger, 0f, 10f);
+        thirst += thirstIncrease * speed.value * Time.deltaTime;
+        thirst = Mathf.Clamp(thirst, 0f, 10f);
+
+        if (hunger == 10f || thirst == 10f)
+        {
+            Debug.Log("Animal died from hunger or thirst");
+            Die();
+        }
+    }
+
+    protected virtual void HandleHunger()
+    {
+        if (hunger == 0f) return;
+
+        Collider[] food = Physics.OverlapSphere(transform.position, eatRange.value, whatIsFood);
         if (food.Length > 0)
         {
             food[0].GetComponentInParent<Food>()?.Eat(this);
         }
 
-        food = Physics.OverlapSphere(transform.position, spotRange, whatIsFood);
+        food = Physics.OverlapSphere(transform.position, spotRange.value, whatIsFood);
         if (food.Length > 0)
         {
             // Find the closest food
@@ -107,14 +107,9 @@ public class Animal : MonoBehaviour {
         }
     }
 
-    private void HandleWater()
+    protected virtual void HandleThirst()
     {
-        // TODO search water and drink
-    }
 
-    private void HandleReproduction()
-    {
-        // TODO search partner and mate
     }
 
     public void RestoreHunger(float amount)
@@ -123,22 +118,45 @@ public class Animal : MonoBehaviour {
         hunger = Mathf.Clamp(hunger, 0f, 10f);
     }
 
-    public void SetParent(Animal parent)
-    {
-        this.parent = parent;
-    }
-
     private void Die()
     {
         Destroy(gameObject);
     }
 
-    private void OnDrawGizmosSelected()
+    public void UpdateSpeed()
+    {
+        agent.speed = speed.value;
+    }
+
+    public void SetChild(float gestationTime)
+    {
+        isChild = true;
+        StartCoroutine(Grow(gestationTime));
+    }
+
+    private IEnumerator Grow(float gestationTime)
+    {
+        yield return new WaitForSeconds(growthTime.value);
+
+        isChild = false;
+
+        // The more underdeveloped the offspring is, the greater chance of dying during growth
+        float developmentAmount = (gestationTime + growthTime.value) / 20f;
+        if (Random.Range(0f, 1f) > developmentAmount)
+        {
+            Debug.Log("Animal died from underdevelopment");
+            Die();
+        }
+        else
+            Debug.Log("Animal has grown");
+    }
+
+    protected virtual void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, eatRange);
+        Gizmos.DrawWireSphere(transform.position, eatRange.value);
 
         Gizmos.color = Color.white;
-        Gizmos.DrawWireSphere(transform.position, spotRange);
+        Gizmos.DrawWireSphere(transform.position, spotRange.value);
     }
 }

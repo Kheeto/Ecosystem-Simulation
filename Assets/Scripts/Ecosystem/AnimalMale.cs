@@ -1,0 +1,70 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AnimalMale : Animal
+{
+    [Header("Male Characteristics")]
+    public Gene approachRange;
+    public Gene reproductionUrge;
+
+    protected override void Update()
+    {
+        HandleNeeds();
+
+        switch (currentNeed)
+        {
+            case Need.Food:
+                HandleHunger();
+                break;
+            case Need.Water:
+                HandleThirst();
+                break;
+            case Need.Reproduction:
+                HandleReproduction();
+                break;
+        }
+    }
+
+    protected override void HandleNeeds()
+    {
+        base.HandleNeeds();
+
+        if (reproductionUrge.value > thirst && reproductionUrge.value > hunger)
+            currentNeed = Need.Reproduction;
+    }
+
+    private void HandleReproduction()
+    {
+        // Check if any female can be approached
+        Collider[] animals = Physics.OverlapSphere(transform.position, approachRange.value, whatIsAnimal);
+        if (animals.Length > 0)
+        {
+            AnimalFemale female = animals[0].GetComponentInParent<AnimalFemale>();
+            if (female != null && !female.isPregnant && !female.isChild)
+                female.Approach(this);
+        }
+
+        // Check if there is any female further away that could be approached
+        animals = Physics.OverlapSphere(transform.position, spotRange.value, whatIsAnimal);
+        if (animals.Length > 0)
+        {
+            foreach (Collider c in animals)
+            {
+                AnimalFemale female = c.GetComponentInParent<AnimalFemale>();
+                if (female != null && !female.isPregnant && !female.isChild)
+                {
+                    agent.SetDestination(c.transform.position);
+                    return;
+                }
+            }
+        }
+    }
+
+    protected override void OnDrawGizmosSelected()
+    {
+        base.OnDrawGizmosSelected();
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, approachRange.value);
+    }
+}
