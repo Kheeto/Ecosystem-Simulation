@@ -70,4 +70,6 @@ public class DayNightCycle : MonoBehaviour
             }
         }
     }
+
+    public float GetTime() { return TimeOfDay; }
 }
