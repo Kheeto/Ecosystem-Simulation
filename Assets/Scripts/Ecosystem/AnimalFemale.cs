@@ -24,6 +24,8 @@ public class AnimalFemale : Animal
 
         yield return new WaitForSeconds(gestationTime.value);
 
+        isPregnant = false;
+
         Debug.Log("Female giving birth");
         for (int i = 0; i < birthAmount; i++)
         {
@@ -40,7 +42,6 @@ public class AnimalFemale : Animal
                 male.reproductionUrge = father.reproductionUrge.Mutate();
                 male.approachRange = father.approachRange.Mutate();
                 male.spotRange = InheritGene(father.spotRange.Mutate(), spotRange.Mutate());
-                male.eatRange = InheritGene(father.eatRange.Mutate(), eatRange.Mutate());
                 male.growthTime = InheritGene(father.growthTime.Mutate(), growthTime.Mutate());
                 male.speed = InheritGene(father.speed.Mutate(), speed.Mutate());
                 male.UpdateSpeed();
@@ -58,7 +59,6 @@ public class AnimalFemale : Animal
                 female.gestationTime = gestationTime.Mutate();
                 female.growthTime = InheritGene(father.growthTime.Mutate(), growthTime.Mutate());
                 female.spotRange = InheritGene(father.spotRange.Mutate(), spotRange.Mutate());
-                female.eatRange = InheritGene(father.eatRange.Mutate(), eatRange.Mutate());
                 female.speed = InheritGene(father.speed.Mutate(), speed.Mutate());
                 female.UpdateSpeed();
 
@@ -67,7 +67,6 @@ public class AnimalFemale : Animal
                 female.SetChild(gestationTime.value);
             }
         }
-        isPregnant = false;
     }
 
     private Gene InheritGene (Gene father, Gene mother)

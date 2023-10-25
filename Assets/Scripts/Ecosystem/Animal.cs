@@ -22,7 +22,7 @@ public class Animal : MonoBehaviour {
 
     [Header("Vision")]
     public Gene spotRange;
-    public Gene eatRange;
+    [SerializeField] private float eatRange = 2f;
     [SerializeField] protected LayerMask whatIsFood;
     [SerializeField] protected LayerMask whatIsAnimal;
 
@@ -38,7 +38,8 @@ public class Animal : MonoBehaviour {
     {
         Food,
         Water,
-        Reproduction
+        Reproduction,
+        Exploration
     }
 
     private void Awake()
@@ -58,6 +59,9 @@ public class Animal : MonoBehaviour {
                 break;
             case Need.Water:
                 HandleThirst();
+                break;
+            case Need.Exploration:
+                Explore();
                 break;
         }
     }
@@ -79,13 +83,15 @@ public class Animal : MonoBehaviour {
             Debug.Log("Animal died from hunger or thirst");
             Die();
         }
+
+        if (!agent.hasPath) currentNeed = Need.Exploration;
     }
 
     protected virtual void HandleHunger()
     {
         if (hunger == 0f) return;
 
-        Collider[] food = Physics.OverlapSphere(transform.position, eatRange.value, whatIsFood);
+        Collider[] food = Physics.OverlapSphere(transform.position, eatRange, whatIsFood);
         if (food.Length > 0)
         {
             food[0].GetComponentInParent<Food>()?.Eat(this);
@@ -103,13 +109,22 @@ public class Animal : MonoBehaviour {
                     closestPosition = food[i].transform.position;
             }
 
-            agent.SetDestination(closestPosition);
+            agent.SetDestination(closestPosition + Random.insideUnitSphere);
         }
     }
 
     protected virtual void HandleThirst()
     {
 
+    }
+
+    protected virtual void Explore()
+    {
+        Vector3 randomPoint;
+        if (NavMeshUtility.RandomPoint(transform.position, spotRange.value, out randomPoint))
+        {
+            agent.SetDestination(randomPoint);
+        }
     }
 
     public void RestoreHunger(float amount)
@@ -154,7 +169,7 @@ public class Animal : MonoBehaviour {
     protected virtual void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, eatRange.value);
+        Gizmos.DrawWireSphere(transform.position, eatRange);
 
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, spotRange.value);
