@@ -12,6 +12,8 @@ public class Animal : MonoBehaviour {
 
     [Range(0f, 10f)]
     [SerializeField] protected float hunger = 0f;
+    [Tooltip("Animal will not search for food below this hunger level")]
+    [SerializeField] protected float minimumHunger = 0f;
     [Range(0f, 10f)]
     [SerializeField] protected float thirst = 0f;
 
@@ -68,10 +70,12 @@ public class Animal : MonoBehaviour {
 
     protected virtual void HandleNeeds()
     {
-        if (thirst > hunger)
+        if (hunger > minimumHunger)
+            currentNeed = Need.Food;
+        else if (thirst > hunger)
             currentNeed = Need.Water;
         else
-            currentNeed = Need.Food;
+            currentNeed = Need.Exploration;
 
         hunger += hungerIncrease * speed.value * Time.deltaTime;
         hunger = Mathf.Clamp(hunger, 0f, 10f);
@@ -120,10 +124,13 @@ public class Animal : MonoBehaviour {
 
     protected virtual void Explore()
     {
-        Vector3 randomPoint;
-        if (NavMeshUtility.RandomPoint(transform.position, spotRange.value, out randomPoint))
+        if (!agent.hasPath)
         {
-            agent.SetDestination(randomPoint);
+            Vector3 randomPoint;
+            if (NavMeshUtility.RandomPoint(transform.position, spotRange.value, out randomPoint))
+            {
+                agent.SetDestination(randomPoint);
+            }
         }
     }
 
@@ -173,5 +180,7 @@ public class Animal : MonoBehaviour {
 
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, spotRange.value);
+
+        Gizmos.DrawLine(transform.position, agent.destination);
     }
 }
