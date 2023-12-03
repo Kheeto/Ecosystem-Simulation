@@ -5,22 +5,34 @@ public class DayNightCycle : MonoBehaviour
 {
     [Header("Day/Night cycle")]
     [SerializeField, Range(0, 24)] private float TimeOfDay;
+    [SerializeField] private int day;
     [SerializeField] private float timeSpeed;
 
     [Header("References")]
     [SerializeField] private Light DirectionalLight;
     [SerializeField] private LightingPreset Preset;
+    [SerializeField] private GameManager gameManager;
+
+    private void Awake()
+    {
+        day = 0;
+    }
 
     private void Update()
     {
         if (Preset == null)
             return;
 
-        if (Application.isPlaying)
+        if (Application.isPlaying && gameManager.HasGameStarted())
         {
+            float lastTimeOfDay = TimeOfDay;
+
             //(Replace with a reference to the game time)
             TimeOfDay += Time.deltaTime * timeSpeed;
             TimeOfDay %= 24; // Clamp between 0-24
+
+            if (lastTimeOfDay <= 24f && lastTimeOfDay > 12f && TimeOfDay >= 0f && TimeOfDay < 12f) day++;
+
             UpdateLighting(TimeOfDay / 24f);
         }
         else
@@ -72,4 +84,6 @@ public class DayNightCycle : MonoBehaviour
     }
 
     public float GetTime() { return TimeOfDay; }
+
+    public int GetDay() { return day; }
 }
