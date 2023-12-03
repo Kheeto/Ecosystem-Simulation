@@ -6,9 +6,10 @@ public class AnimalFemale : Animal
 {
     [Header("Female Characteristics")]
     public Gene gestationTime;
-    [SerializeField] private int birthAmount = 2;
-    public GameObject femaleChildPrefab;
-    public GameObject maleChildPrefab;
+    [SerializeField] private int minBirthAmount = 3;
+    [SerializeField] private int maxBirthAmount = 5;
+    public string femaleChildPrefab;
+    public string maleChildPrefab;
     public bool isPregnant;
 
     public void Approach (AnimalMale partner)
@@ -27,7 +28,7 @@ public class AnimalFemale : Animal
         isPregnant = false;
 
         Debug.Log("Female giving birth");
-        for (int i = 0; i < birthAmount; i++)
+        for (int i = 0; i < Random.Range(minBirthAmount, maxBirthAmount+1); i++)
         {
             Vector3 spawnPosition = transform.position + Random.insideUnitSphere;
 
@@ -35,7 +36,7 @@ public class AnimalFemale : Animal
             if (Random.Range(0f, 1f) <= 0.5f)
             {
                 Debug.Log("A male was born");
-                GameObject child = Instantiate(maleChildPrefab, spawnPosition, Quaternion.identity);
+                GameObject child = Instantiate(Resources.Load(maleChildPrefab) as GameObject, spawnPosition, Quaternion.identity);
                 AnimalMale male = child.GetComponent<AnimalMale>();
 
                 // Mutate the genes
@@ -52,7 +53,7 @@ public class AnimalFemale : Animal
             else
             {
                 Debug.Log("A female was born");
-                GameObject child = Instantiate(femaleChildPrefab, spawnPosition, Quaternion.identity);
+                GameObject child = Instantiate(Resources.Load(femaleChildPrefab) as GameObject, spawnPosition, Quaternion.identity);
                 AnimalFemale female = child.GetComponent<AnimalFemale>();
 
                 // Mutate the genes

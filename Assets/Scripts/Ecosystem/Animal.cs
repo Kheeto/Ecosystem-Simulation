@@ -2,7 +2,16 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
+public enum EntityType
+{
+    Rabbit,
+    Fox,
+    Plant
+}
+
 public class Animal : MonoBehaviour {
+
+    public EntityType type;
 
     [Header("Stats")]
     public Gene speed;
@@ -14,22 +23,26 @@ public class Animal : MonoBehaviour {
     [SerializeField] protected float hunger = 0f;
     [Tooltip("Animal will not search for food below this hunger level")]
     [SerializeField] protected float minimumHunger = 0f;
-    [Range(0f, 10f)]
-    [SerializeField] protected float thirst = 0f;
+    [Tooltip("Animal will not flee above this hunger level, they will search for food")]
+    [SerializeField] protected float maxFleeHunger = 0f;
 
     [Tooltip("How much the Hunger need will increase per second")]
-    [SerializeField] protected float hungerIncrease = .5f;
-    [Tooltip("How much the Thirst need will increase per second")]
-    [SerializeField] protected float thirstIncrease = .5f;
+    [SerializeField] protected float hungerIncrease = .3f;
+    [Tooltip("How much the speed value will affect the hunger increase")]
+    [SerializeField] protected float speedHungerIncrease = .1f;
+
 
     [Header("Vision")]
     public Gene spotRange;
     [SerializeField] private float eatRange = 2f;
     [SerializeField] protected LayerMask whatIsFood;
     [SerializeField] protected LayerMask whatIsAnimal;
+    [SerializeField] protected LayerMask whatIsPredator;
 
     [Header("Growth")]
     public Gene growthTime;
+    [Tooltip("The needed total of growth time + gestation time, if an animals takes shorter to grow up it has a chance of dying")]
+    [SerializeField] private float growthRequirement = 20f;
     public bool isChild;
     [SerializeField] private float agingTime = 60f;
 
@@ -39,15 +52,15 @@ public class Animal : MonoBehaviour {
     public enum Need
     {
         Food,
-        Water,
         Reproduction,
-        Exploration
+        Exploration,
+        Flee
     }
 
     private void Awake()
     {
         UpdateSpeed();
-        Invoke(nameof(Die), agingTime);
+        StartCoroutine(Aging());
     }
 
     protected virtual void Update()
@@ -59,11 +72,10 @@ public class Animal : MonoBehaviour {
             case Need.Food:
                 HandleHunger();
                 break;
-            case Need.Water:
-                HandleThirst();
-                break;
             case Need.Exploration:
                 Explore();
+                break;
+            case Need.Flee:
                 break;
         }
     }
@@ -72,54 +84,69 @@ public class Animal : MonoBehaviour {
     {
         if (hunger > minimumHunger)
             currentNeed = Need.Food;
-        else if (thirst > hunger)
-            currentNeed = Need.Water;
         else
             currentNeed = Need.Exploration;
 
-        hunger += hungerIncrease * speed.value * Time.deltaTime;
+        hunger += (hungerIncrease + (speed.value * speedHungerIncrease)) * Time.deltaTime;
         hunger = Mathf.Clamp(hunger, 0f, 10f);
-        thirst += thirstIncrease * speed.value * Time.deltaTime;
-        thirst = Mathf.Clamp(thirst, 0f, 10f);
 
-        if (hunger == 10f || thirst == 10f)
-        {
-            Debug.Log("Animal died from hunger or thirst");
-            Die();
-        }
+        if (hunger == 10f) Die("Hunger");
 
         if (!agent.hasPath) currentNeed = Need.Exploration;
+
+        if (hunger < maxFleeHunger) Flee();
     }
 
     protected virtual void HandleHunger()
     {
         if (hunger == 0f) return;
 
-        Collider[] food = Physics.OverlapSphere(transform.position, eatRange, whatIsFood);
-        if (food.Length > 0)
+        if (type == EntityType.Fox) Debug.Log("FOX SEARCHES FOOD");
+
+        Collider[] foods = Physics.OverlapSphere(transform.position, eatRange, whatIsFood);
+        foreach (Collider food in foods)
         {
-            food[0].GetComponentInParent<Food>()?.Eat(this);
+            Food f = food.GetComponentInParent<Food>();
+            if (f != null && f.isGrown) f.Eat(this);
         }
 
-        food = Physics.OverlapSphere(transform.position, spotRange.value, whatIsFood);
-        if (food.Length > 0)
+        foods = Physics.OverlapSphere(transform.position, spotRange.value, whatIsFood);
+        Transform closest = null;
+
+        foreach (Collider food in foods)
         {
-            // Find the closest food
-            Vector3 closestPosition = food[0].transform.position;
-            for (int i = 1; i < food.Length; i++)
+            if (closest == null)
             {
-                if (Vector3.Distance(transform.position, food[i].transform.position)
-                    < Vector3.Distance(transform.position, closestPosition))
-                    closestPosition = food[i].transform.position;
+                if (food.GetComponentInParent<Food>().isGrown) closest = food.transform;
+                continue;
             }
-
-            agent.SetDestination(closestPosition + Random.insideUnitSphere);
+            if (food.GetComponentInParent<Food>().isGrown &&
+                Vector3.Distance(transform.position, food.transform.position)
+                < Vector3.Distance(transform.position, closest.position))
+                closest = food.transform;
         }
+
+        if (closest != null) agent.SetDestination(closest.position + Random.insideUnitSphere);
     }
 
-    protected virtual void HandleThirst()
+    protected virtual void Flee()
     {
+        // Check predators
+        Collider[] predators = Physics.OverlapSphere(transform.position, spotRange.value, whatIsPredator);
 
+        if (predators.Length == 0) return;
+
+        // Calculate the average direction predators are coming from
+        Vector3 predatorsDirection = Vector3.zero;
+        foreach (Collider predator in predators)
+        {
+            predatorsDirection += (predator.transform.position - transform.position).normalized;
+        }
+
+        Vector3 fleeDirection = -predatorsDirection;
+
+        agent.SetDestination(transform.position + fleeDirection);
+        currentNeed = Need.Flee;
     }
 
     protected virtual void Explore()
@@ -129,6 +156,11 @@ public class Animal : MonoBehaviour {
             Vector3 randomPoint;
             if (NavMeshUtility.RandomPoint(transform.position, spotRange.value, out randomPoint))
             {
+                if (!agent.isOnNavMesh)
+                {
+                    agent.Warp(randomPoint);
+                }
+
                 agent.SetDestination(randomPoint);
             }
         }
@@ -140,8 +172,9 @@ public class Animal : MonoBehaviour {
         hunger = Mathf.Clamp(hunger, 0f, 10f);
     }
 
-    private void Die()
+    private void Die (string reason = "unknown reason")
     {
+        Debug.Log("Animal died from " + reason);
         Destroy(gameObject);
     }
 
@@ -163,14 +196,19 @@ public class Animal : MonoBehaviour {
         isChild = false;
 
         // The more underdeveloped the offspring is, the greater chance of dying during growth
-        float developmentAmount = (gestationTime + growthTime.value) / 20f;
+        float developmentAmount = (gestationTime + growthTime.value) / growthRequirement;
         if (Random.Range(0f, 1f) > developmentAmount)
         {
-            Debug.Log("Animal died from underdevelopment");
-            Die();
+            Die("Underdevelopment");
         }
         else
             Debug.Log("Animal has grown");
+    }
+
+    private IEnumerator Aging()
+    {
+        yield return new WaitForSeconds(agingTime);
+        Die("Aging");
     }
 
     protected virtual void OnDrawGizmosSelected()

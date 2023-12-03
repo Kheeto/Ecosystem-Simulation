@@ -17,9 +17,6 @@ public class AnimalMale : Animal
             case Need.Food:
                 HandleHunger();
                 break;
-            case Need.Water:
-                HandleThirst();
-                break;
             case Need.Reproduction:
                 HandleReproduction();
                 break;
@@ -34,7 +31,7 @@ public class AnimalMale : Animal
         base.HandleNeeds();
         if (isChild) return;
 
-        if (reproductionUrge.value > thirst && reproductionUrge.value > hunger)
+        if (reproductionUrge.value > hunger)
             currentNeed = Need.Reproduction;
     }
 
@@ -65,10 +62,19 @@ public class AnimalMale : Animal
                 }
             }
         }
+
         if (!femaleFound)
         {
-            currentNeed = Need.Food;
-            base.HandleHunger();
+            if (hunger >= minimumHunger)
+            {
+                currentNeed = Need.Food;
+                base.HandleHunger();
+            }
+            else
+            {
+                currentNeed = Need.Exploration;
+                base.Explore();
+            }
         }
     }
 
