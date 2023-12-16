@@ -17,10 +17,10 @@ public class Animal : MonoBehaviour {
     public Gene speed;
 
     [Header("Needs")]
-    [SerializeField] protected Need currentNeed;
+    public Need currentNeed;
 
     [Range(0f, 10f)]
-    [SerializeField] protected float hunger = 0f;
+    public float hunger = 0f;
     [Tooltip("Animal will not search for food below this hunger level")]
     [SerializeField] protected float minimumHunger = 0f;
     [Tooltip("Animal will not flee above this hunger level, they will search for food")]
@@ -43,11 +43,14 @@ public class Animal : MonoBehaviour {
     public Gene growthTime;
     [Tooltip("The needed total of growth time + gestation time, if an animals takes shorter to grow up it has a chance of dying")]
     [SerializeField] private float growthRequirement = 20f;
+    public float growthProgress = 0f;
     public bool isChild;
     [SerializeField] private float agingTime = 60f;
 
     [Header("References")]
     [SerializeField] protected NavMeshAgent agent;
+    [SerializeField] GameObject offspringInfoUI;
+    [SerializeField] GameObject adultInfoUI;
 
     public enum Need
     {
@@ -65,6 +68,8 @@ public class Animal : MonoBehaviour {
 
     protected virtual void Update()
     {
+        if (isChild) growthProgress += Time.deltaTime;
+
         HandleNeeds();
 
         switch (currentNeed)
@@ -191,9 +196,14 @@ public class Animal : MonoBehaviour {
 
     private IEnumerator Grow(float gestationTime)
     {
+        offspringInfoUI.SetActive(true);
+        adultInfoUI.SetActive(false);
+
         yield return new WaitForSeconds(growthTime.value);
 
         isChild = false;
+        offspringInfoUI.SetActive(false);
+        adultInfoUI.SetActive(true);
 
         // The more underdeveloped the offspring is, the greater chance of dying during growth
         float developmentAmount = (gestationTime + growthTime.value) / growthRequirement;

@@ -12,10 +12,18 @@ public class AnimalFemale : Animal
     public string maleChildPrefab;
     public bool isPregnant;
 
+    public float gestationProgress = 0f;
+
     public void Approach (AnimalMale partner)
     {
         Debug.Log("Female was approached");
         StartCoroutine(GiveBirth(partner));
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+        if (isPregnant) gestationProgress += Time.deltaTime;
     }
 
     private IEnumerator GiveBirth (AnimalMale father)
@@ -25,6 +33,7 @@ public class AnimalFemale : Animal
 
         yield return new WaitForSeconds(gestationTime.value);
 
+        gestationProgress = 0f;
         isPregnant = false;
 
         Debug.Log("Female giving birth");

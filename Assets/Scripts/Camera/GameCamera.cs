@@ -5,8 +5,13 @@ using UnityEngine;
 public class GameCamera : MonoBehaviour
 {
     [Header("Settings")]
-    [SerializeField] private float speed = 10f;
-    [SerializeField] private float sensivity = 10f;
+    [SerializeField] float speed = 10f;
+    [SerializeField] float sensivity = 10f;
+
+    [Header("Focus")]
+    public GameObject focus;
+    [SerializeField] Vector3 offset;
+    [SerializeField] float smoothSpeed = 20f;
 
     bool isActive;
 
@@ -17,8 +22,6 @@ public class GameCamera : MonoBehaviour
 
     public void Activate()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
         isActive = true;
     }
 
@@ -26,11 +29,43 @@ public class GameCamera : MonoBehaviour
     {
         if (isActive)
         {
-            MoveCamera();
-            RotateCamera();
+            if (focus != null)
+            {
+                FollowFocus();
+                StopFocus();
+            }
+            else
+            {
+                MoveCamera();
+                LockCursor();
+                RotateCamera();
+            }
         }
     }
 
+    private void FollowFocus()
+    {
+        transform.position = Vector3.Lerp(transform.position, focus.transform.position + offset, smoothSpeed * Time.deltaTime);
+
+        Quaternion targetRotation = Quaternion.LookRotation(focus.transform.position - transform.position);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, smoothSpeed * Time.deltaTime);
+    }
+
+    private void StopFocus()
+    {
+        if (Input.GetMouseButtonDown(1))
+        {
+            focus = null;
+            // Disable all the active animal info UIs
+            foreach (AnimalInfoUI ui in FindObjectsOfType<AnimalInfoUI>())
+            {
+                ui.transform.parent.gameObject.SetActive(false);
+            }
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
     private void MoveCamera()
     {
         float horizontal = Input.GetAxis("Horizontal") * Time.deltaTime;
@@ -40,14 +75,31 @@ public class GameCamera : MonoBehaviour
         transform.Translate(Vector3.forward * speed * vertical, Space.Self);
     }
 
+    private void LockCursor()
+    {
+        if (Input.GetMouseButtonDown(1))
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        if (Input.GetMouseButtonUp(1))
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+    }
+
     private void RotateCamera()
     {
-        float mouseX = Input.GetAxis("Mouse X") * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * Time.deltaTime;
+        if (Input.GetMouseButton(1))
+        {
+            float mouseX = Input.GetAxis("Mouse X") * Time.deltaTime;
+            float mouseY = Input.GetAxis("Mouse Y") * Time.deltaTime;
 
-        transform.Rotate(Vector3.up * sensivity * mouseX, Space.Self);
-        transform.Rotate(-Vector3.right * sensivity * mouseY, Space.Self);
-        transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, 0f);
+            transform.Rotate(Vector3.up * sensivity * mouseX, Space.Self);
+            transform.Rotate(-Vector3.right * sensivity * mouseY, Space.Self);
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, 0f);
+        }
     }
 
     public void EnableCamera(bool active)
