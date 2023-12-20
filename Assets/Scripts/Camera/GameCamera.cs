@@ -14,32 +14,25 @@ public class GameCamera : MonoBehaviour
     [SerializeField] float smoothSpeed = 20f;
 
     bool isActive;
-
     private void Awake()
     {
-        isActive = false;
-    }
-
-    public void Activate()
-    {
-        isActive = true;
+        EnableCamera(false);
     }
 
     private void Update()
     {
-        if (isActive)
+        if (!isActive) return;
+
+        if (focus != null)
         {
-            if (focus != null)
-            {
-                FollowFocus();
-                StopFocus();
-            }
-            else
-            {
-                MoveCamera();
-                LockCursor();
-                RotateCamera();
-            }
+            FollowFocus();
+            StopFocusing();
+        }
+        else
+        {
+            MoveCamera();
+            RotateCamera();
+            HandleCursor();
         }
     }
 
@@ -51,7 +44,7 @@ public class GameCamera : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, smoothSpeed * Time.deltaTime);
     }
 
-    private void StopFocus()
+    private void StopFocusing()
     {
         if (Input.GetMouseButtonDown(1))
         {
@@ -62,10 +55,10 @@ public class GameCamera : MonoBehaviour
                 ui.transform.parent.gameObject.SetActive(false);
             }
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            LockCursor();
         }
     }
+
     private void MoveCamera()
     {
         float horizontal = Input.GetAxis("Horizontal") * Time.deltaTime;
@@ -73,20 +66,6 @@ public class GameCamera : MonoBehaviour
 
         transform.Translate(Vector3.right * speed * horizontal, Space.Self);
         transform.Translate(Vector3.forward * speed * vertical, Space.Self);
-    }
-
-    private void LockCursor()
-    {
-        if (Input.GetMouseButtonDown(1))
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        if (Input.GetMouseButtonUp(1))
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
     }
 
     private void RotateCamera()
@@ -100,6 +79,30 @@ public class GameCamera : MonoBehaviour
             transform.Rotate(-Vector3.right * sensivity * mouseY, Space.Self);
             transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, 0f);
         }
+    }
+
+    private void HandleCursor()
+    {
+        if (Input.GetMouseButtonDown(1)) LockCursor();
+        if (Input.GetMouseButtonUp(1)) UnlockCursor();
+    }
+
+    public void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    public void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void ShowFocusUI(bool show)
+    {
+        if (focus != null && focus.GetComponent<Animal>() != null)
+            focus.GetComponent<Animal>().canvas.SetActive(show);
     }
 
     public void EnableCamera(bool active)

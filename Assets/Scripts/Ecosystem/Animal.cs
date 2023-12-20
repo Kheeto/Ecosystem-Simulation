@@ -49,6 +49,7 @@ public class Animal : MonoBehaviour {
 
     [Header("References")]
     [SerializeField] protected NavMeshAgent agent;
+    public GameObject canvas;
     [SerializeField] GameObject offspringInfoUI;
     [SerializeField] GameObject adultInfoUI;
 

@@ -53,7 +53,7 @@ public class GameManager : MonoBehaviour
                 Mathf.RoundToInt(grassSlider.value));
             entitySpawner.SpawnEntities();
 
-            gameCamera.Activate();
+            gameCamera.EnableCamera(true);
 
             foreach (Graph g in graphs) g.StartGraph();
 

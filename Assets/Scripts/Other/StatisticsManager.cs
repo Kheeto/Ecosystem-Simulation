@@ -29,9 +29,9 @@ public class StatisticsManager : MonoBehaviour
                 background.SetActive(false);
                 buttonsHolder.SetActive(false);
                 HideAllGraphs();
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
                 gameCamera.EnableCamera(true);
+                gameCamera.UnlockCursor();
+                gameCamera.ShowFocusUI(true);
             }
             else
             {
@@ -39,9 +39,8 @@ public class StatisticsManager : MonoBehaviour
                 background.SetActive(true);
                 buttonsHolder.SetActive(true);
                 ShowPopulationGraph();
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
                 gameCamera.EnableCamera(false);
+                gameCamera.ShowFocusUI(false);
             }
         }
     }

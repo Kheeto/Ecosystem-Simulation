@@ -10,6 +10,8 @@ public class AnimalMale : Animal
 
     protected override void Update()
     {
+        if (isChild) growthProgress += Time.deltaTime;
+
         HandleNeeds();
 
         switch (currentNeed)
@@ -65,7 +67,7 @@ public class AnimalMale : Animal
 
         if (!femaleFound)
         {
-            if (hunger >= minimumHunger)
+            if (hunger > minimumHunger)
             {
                 currentNeed = Need.Food;
                 base.HandleHunger();
