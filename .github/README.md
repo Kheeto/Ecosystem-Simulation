@@ -16,3 +16,10 @@ The way animals evolve depends on many different factors, including the random m
 
 ### Variables
 An example of these variables is how much speed affects the hunger of the animal. If rabbits could have a greater speed without gaining too much hunger, they might evolve to be faster so they can avoid being eaten by foxes.
+
+![A fox following a rabbit to eat it](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-52-8.png)
+![Close-up view of some rabbits](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-51-38.png)
+![A view of the island during sunrise](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-51-23.png)
+![The stats of a female rabbit](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-51-4.png)
+![The statistics window showing the population of different species](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-57-21.png)
+![Two foxes during reproduction](https://github.com/Kheeto/Ecosystem-Simulation/blob/main/.github/Screenshot_26-12-2023_18-52-29.png)
